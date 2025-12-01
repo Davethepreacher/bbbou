@@ -110,6 +110,7 @@
             
             // Attendre que la vidéo soit prête
             video.oncanplaythrough = async function() {
+                video.oncanplaythrough = null; // Éviter les appels multiples
                 video.play();
                 
                 try {
@@ -118,7 +119,9 @@
                     analyser = audioContext.createAnalyser();
                     analyser.fftSize = 256;
                     audioContext.createMediaStreamSource(stream).connect(analyser);
-                    detectBlow();
+                    
+                    // Attendre 2 secondes avant d'activer la détection
+                    setTimeout(detectBlow, 2000);
                 } catch(e) {
                     document.body.onclick = showImage;
                 }
@@ -138,11 +141,11 @@
                 for (let i = 0; i < 20; i++) sum += data[i];
                 const level = sum / 20 / 255;
 
-                if (level > 0.15) {
+                if (level > 0.25) {
                     if (!isBlowing) {
                         isBlowing = true;
                         blowStart = Date.now();
-                    } else if (Date.now() - blowStart > 400) {
+                    } else if (Date.now() - blowStart > 600) {
                         showImage();
                         return;
                     }
