@@ -107,18 +107,25 @@
             
             video.loop = true;
             video.playsInline = true;
-            video.play();
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 256;
-                audioContext.createMediaStreamSource(stream).connect(analyser);
-                detectBlow();
-            } catch(e) {
-                document.body.onclick = showImage;
-            }
+            
+            // Attendre que la vidéo soit prête
+            video.oncanplaythrough = async function() {
+                video.play();
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 256;
+                    audioContext.createMediaStreamSource(stream).connect(analyser);
+                    detectBlow();
+                } catch(e) {
+                    document.body.onclick = showImage;
+                }
+            };
+            
+            // Forcer le chargement
+            video.load();
         };
 
         function detectBlow() {
