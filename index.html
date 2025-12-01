@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anniversaire</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+        }
+
+        #birthday-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+        }
+
+        #image-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            justify-content: center;
+            align-items: center;
+        }
+
+        #image-container.visible {
+            display: flex;
+        }
+
+        #surprise-content {
+            color: white;
+            font-family: Georgia, serif;
+            font-size: 24px;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.8;
+            padding: 40px;
+        }
+
+        #surprise-content .signature {
+            margin-top: 30px;
+            font-style: italic;
+        }
+
+        #start-btn {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+        }
+
+        #start-btn.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-btn">Cliquez pour commencer</div>
+
+    <video id="birthday-video" muted>
+        <source src="birthday.mp4" type="video/mp4">
+    </video>
+
+    <div id="image-container">
+        <div id="surprise-content">
+            Mon amour, mon Bbbou, une nouvelle année s'ouvre devant toi, remplie d'amour, de douceur et de joies que tu mérites infiniment. Je veux être à tes côtés pour t'envelopper de tout ce bonheur, et t'en offrir encore davantage à chaque anniversaire.
+            <div class="signature">
+                Je t'aime.<br><br>
+                David (🐱)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('start-btn');
+        const video = document.getElementById('birthday-video');
+        const imageContainer = document.getElementById('image-container');
+
+        let audioContext, analyser, isBlowing = false, blowStart = 0;
+
+        startBtn.onclick = async function() {
+            startBtn.classList.add('hidden');
+            
+            video.loop = true;
+            video.playsInline = true;
+            video.play();
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                audioContext.createMediaStreamSource(stream).connect(analyser);
+                detectBlow();
+            } catch(e) {
+                document.body.onclick = showImage;
+            }
+        };
+
+        function detectBlow() {
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            
+            function check() {
+                analyser.getByteFrequencyData(data);
+                
+                let sum = 0;
+                for (let i = 0; i < 20; i++) sum += data[i];
+                const level = sum / 20 / 255;
+
+                if (level > 0.15) {
+                    if (!isBlowing) {
+                        isBlowing = true;
+                        blowStart = Date.now();
+                    } else if (Date.now() - blowStart > 400) {
+                        showImage();
+                        return;
+                    }
+                } else {
+                    isBlowing = false;
+                }
+                
+                requestAnimationFrame(check);
+            }
+            check();
+        }
+
+        function showImage() {
+            video.pause();
+            video.style.display = 'none';
+            imageContainer.classList.add('visible');
+        }
+    </script>
+</body>
+</html>
